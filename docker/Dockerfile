@@ -19,6 +19,7 @@ ARG COMMIT_SHA=unknown
 ARG REPO_NAME=unknown
 ARG BRANCH_NAME=unknown
 ARG TAG_NAME=unknown
+ARG POSTGRES_PASSWORD=unknown
 
 ADD . /graph-node
 
@@ -43,13 +44,17 @@ RUN apt-get update \
     && echo "RUST_VERSION='$(rustc --version)'" >> /etc/image-info \
     && echo "CARGO_DEV_BUILD='$CARGO_DEV_BUILD'" >> /etc/image-info
 
-# Debug image to access core dumps
+# # Debug image to access core dumps
 FROM graph-node-build as graph-node-debug
 RUN apt-get update \
     && apt-get install -y curl gdb postgresql-client
 
 COPY docker/Dockerfile /Dockerfile
 COPY docker/bin/* /usr/local/bin/
+
+FROM ipfs/kubo:v0.14.0 as ipfs-node
+EXPOSE 5001
+VOLUME ./data/ipfs:/data/ipfs
 
 # The graph-node runtime image with only the executable
 FROM debian:bullseye-slim as graph-node
@@ -59,16 +64,16 @@ ENV EARLY_LOG_CHUNK_SIZE ""
 ENV ETHEREUM_RPC_PARALLEL_REQUESTS ""
 ENV ETHEREUM_BLOCK_CHUNK_SIZE ""
 
-ENV postgres_host ""
-ENV postgres_user ""
-ENV postgres_pass ""
-ENV postgres_db ""
+ENV postgres_host '34.136.243.39'
+ENV postgres_user 'postgres'
+ENV postgres_pass 'r9djF23wjD3TfWE'
+ENV postgres_db 'kettle-graph-db'
 ENV postgres_args "sslmode=prefer"
 # The full URL to the IPFS node
-ENV ipfs ""
+ENV ipfs 'http://172.17.0.2:5001'
 # The etherum network(s) to connect to. Set this to a space-separated
 # list of the networks where each entry has the form NAME:URL
-ENV ethereum ""
+ENV ethereum 'mainnet:https://eth-mainnet.g.alchemy.com/v2/_XlzvFN1SJhET7pQS5lxTNlkok7VM2w_'
 # The role the node should have, one of index-node, query-node, or
 # combined-node
 ENV node_role "combined-node"
